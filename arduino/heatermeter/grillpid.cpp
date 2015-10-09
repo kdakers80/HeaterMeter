@@ -467,10 +467,10 @@ inline void GrillPid::calcPidOutput(void)
 
   // DDDDD = fan speed percent per degree of change over TEMPPROBE_AVG_SMOOTH period
   _pidCurrent[PIDD] = Pid[PIDD] * (Probes[TEMP_CTRL]->TemperatureAvg - currentTemp);
-  // BBBBB = fan speed percent
-  _pidCurrent[PIDB] = Pid[PIDB];
+  // BBBBB = fan speed percent (always 0)
+  //_pidCurrent[PIDB] = Pid[PIDB];
 
-  int control = _pidCurrent[PIDB] + _pidCurrent[PIDP] + _pidCurrent[PIDI] + _pidCurrent[PIDD];
+  int control = _pidCurrent[PIDP] + _pidCurrent[PIDI] + _pidCurrent[PIDD];
   _pidOutput = constrain(control, 0, 100);
 }
 
@@ -661,6 +661,13 @@ void GrillPid::setPidOutput(int value)
   _manualOutputMode = true;
   _pidOutput = constrain(value, 0, 100);
   LidOpenResumeCountdown = 0;
+}
+
+void GrillPid::setPidConstant(unsigned char idx, float value)
+{
+  Pid[idx] = value;
+  if (idx == PIDI && value == 0)
+    _pidCurrent[PIDI] = 0;
 }
 
 void GrillPid::setLidOpenDuration(unsigned int value)

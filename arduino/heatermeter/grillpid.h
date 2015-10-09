@@ -154,7 +154,7 @@ private:
   // Counter used for "long PWM" mode
   unsigned char _longPwmTmr;
   unsigned int _lidOpenDuration;
-  // Last values used in PID calculation = B + P + I + D;
+  // Last values used in PID calculation = B + P + I + D (B is always 0)
   float _pidCurrent[4];
   char _units;
   unsigned char _fanMaxSpeed;
@@ -202,7 +202,7 @@ public:
   unsigned char getAdcBits(void) const { return 10 + TEMP_OVERSAMPLE_BITS; }
   // The PID constants
   float Pid[4];
-  void setPidConstant(unsigned char idx, float value) { Pid[idx] = value; }
+  void setPidConstant(unsigned char idx, float value);
   void setProbeType(unsigned char idx, unsigned char probeType);
   void updateControlProbe(void);
 

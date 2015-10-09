@@ -16,6 +16,7 @@ var coeffPresets = [
 
 $(function ()
 {
+  $("input,select").on("change", configElemChange);
   loadCoeffPresets();
   configToForm();
 });
@@ -97,8 +98,7 @@ function checkCoeffForPresets()
         break;
       }
     }
-    $("#pcp"+name).val(result)
-      .trigger("change");
+    $("#pcp"+name).val(result).trigger("change");
   } /* for probenum */
 }
 
@@ -189,6 +189,9 @@ function typeChanged()
   // If switching to 'Thermocouple', default to 5 mV/C if was 10k
   else if (this.value == "3" && $("#pcr" + name).val() == "10000")
     $("#pcr" + name).val("5");
+
+  // Chain the standard event handler after this one
+  configElemChange.call(this);
 }
 
 function isProbeId(hay, need)
@@ -223,23 +226,19 @@ function configHashToForm()
       elem.val("");
       
     if (isProbeId(k, "pt"))
-      elem.change(typeChanged).trigger("change");
+      elem.off("change").on("change", typeChanged).trigger("change");
     else if (isProbeId(k, "prfn"))
       $("#prfa" + k.substr(4))
-        .change(configElemChange)
         .prop("checked", val == 127);
     else if (isProbeId(k, "pall") || isProbeId(k, "palh"))
       $("#pale" + k.substr(3))
-        .change(configElemChange)
         .prop("checked", val > 0);
     else if (isProbeId(k, "le"))
     {
       if (val == 255) val = 127;
       $("#les" + k.substr(2))
-        .change(configElemChange)
         .val(val & 0x7f);
       $("#lei" + k.substr(2))
-        .change(configElemChange)
         .prop("checked", val & 0x80);
     }
     else if (k == "oflag")
@@ -250,10 +249,7 @@ function configHashToForm()
     }
     else if (k == "smin" || k == "smax")
       $("#" + k + "X")
-        .val(val * 10)
-        .change(configElemChange);
-
-    elem.change(configElemChange);
+        .val(val * 10);
   }
 }
 
@@ -345,10 +341,7 @@ function setupCheckboxBitmask(k, v)
   {
     var elem = $("#" + k + i)
     if (elem)
-    {
-      elem.change(configElemChange)
-        .prop("checked", v & (1 << i));
-    }
+      elem.prop("checked", v & (1 << i));
   }
 }
 
@@ -442,7 +435,7 @@ function updateConfigUrl(divname, h)
 {
   var aValues = new Array();
   var STATIC_MAP = [ "pn0", "pn1", "pn2", "pn3", 
-    "sp", "pidb", "pidp", "pidi", "pidd" ];
+    "sp", "pidp", "pidi", "pidd" ];
   for (var k in h)
   {
     if ($.inArray(k, STATIC_MAP) != -1)
@@ -483,16 +476,6 @@ function updateConfigUrl(divname, h)
     if (divname == "#updateurl")
       $(':button[name="cbi.apply"]').off("click");
   }
-}
-
-function coeffClick(probeId, idx)
-{
-  $("#pcppopup").hide();
-  $("#pca" + probeId)
-    .val(coeffPresets[idx].stein)
-    .trigger("change");
-  
-  return false;
 }
 
 function ifrmTarget(url,title)
@@ -554,7 +537,6 @@ function ifrmHide()
   ul.led label { position: absolute; right: 0; }
   div.circle { display: inline-block; width: 8px; height: 8px; border-radius: 50%;
     border: 1px solid gray; }
-  #pcppopup { position: absolute; left: 0px; top: 0px; width: 100%; background: #f5f5f5; border: 2px solid #333; font-size: x-small; display: none; text-align: left; }
   #dialog-overlay { width: 100%; height: 100%; position: fixed; 
     top: 0px; left: 0px; display: none; background-color: #000; 
     opacity: 0.6; z-index: 1; }
@@ -579,14 +561,6 @@ The look of the Home page can be modified using the
 <form method="GET" action="">
 <fieldset class="cbi-section" id="cbi-lm-probes">
 <legend>Probe Setup</legend>
-
-<div id="pcppopup">
-  <div style="text-align: center; background: #333; color: #fff; position: relative;" onclick="$('#pcppopup').hide();">
-    Coefficient Preset
-    <div style="position: absolute; top: -1px; right: 2px; display: inline;">X</div>
-  </div>
-  <ul style="list-style-type: none; text-indent: -1em;" id="pcplist"></ul>
-</div>
 
 <table style="width: 100%;"><tr>
 <% for i = 0, 3 do %>
@@ -638,7 +612,6 @@ time they are restarted.</div>
 <fieldset class="cbi-section" id="cbi-lm-pid">
 <legend>PID Output Parameters</legend>
   <div class="cbi-value">
-    Bias <input type="text" maxlength="12" id="pidb" style="width: 5em;"/>
     Proportional <input type="text" maxlength="12" id="pidp" style="width: 5em;"/>
     Integral <input type="text" maxlength="12" id="pidi" style="width: 5em;"/>
     Derivative <input type="text" maxlength="12" id="pidd" style="width: 5em;"/>
